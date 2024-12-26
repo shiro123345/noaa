@@ -1,0 +1,149 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# List of file paths
+file_paths = [
+    r"C:\Users\User\Downloads\98425099999.csv",
+    r"C:\Users\User\Downloads\98425099999 (1).csv",
+    r"C:\Users\User\Downloads\98425099999 (2).csv",
+    r"C:\Users\User\Downloads\98425099999 (3).csv",
+    r"C:\Users\User\Downloads\98425099999 (4).csv",
+    r"C:\Users\User\Downloads\98425099999 (5).csv",
+    r"C:\Users\User\Downloads\98425099999 (6).csv",
+    r"C:\Users\User\Downloads\98425099999 (7).csv",
+    r"C:\Users\User\Downloads\98425099999 (8).csv",
+    r"C:\Users\User\Downloads\98425099999 (9).csv",
+    r"C:\Users\User\Downloads\98425099999 (10).csv",
+    r"C:\Users\User\Downloads\98425099999 (11).csv",
+    r"C:\Users\User\Downloads\98425099999 (12).csv",
+    r"C:\Users\User\Downloads\98425099999 (13).csv",
+    r"C:\Users\User\Downloads\98425099999 (14).csv",
+    r"C:\Users\User\Downloads\98425099999 (15).csv",
+    r"C:\Users\User\Downloads\98425099999 (16).csv",
+    r"C:\Users\User\Downloads\98425099999 (17).csv",
+    r"C:\Users\User\Downloads\98425099999 (18).csv",
+    r"C:\Users\User\Downloads\98425099999 (19).csv",
+    r"C:\Users\User\Downloads\98425099999 (20).csv",
+    r"C:\Users\User\Downloads\98425099999 (21).csv",
+    r"C:\Users\User\Downloads\98425099999 (22).csv",
+    r"C:\Users\User\Downloads\98425099999 (23).csv",
+    r"C:\Users\User\Downloads\98425099999 (24).csv",
+    r"C:\Users\User\Downloads\98425099999 (25).csv",
+    r"C:\Users\User\Downloads\98425099999 (26).csv",
+    r"C:\Users\User\Downloads\98425099999 (27).csv",
+    r"C:\Users\User\Downloads\98425099999 (28).csv",
+    r"C:\Users\User\Downloads\98425099999 (29).csv",
+    r"C:\Users\User\Downloads\98425099999 (30).csv"
+]
+
+# Load and combine all data
+all_data = []
+for file_path in file_paths:
+    try:
+        df = pd.read_csv(file_path)
+        all_data.append(df)
+    except FileNotFoundError:
+        print(f"File not found: {file_path}")
+    except Exception as e:
+        print(f"Error reading {file_path}: {e}")
+
+# Combine all data into a single DataFrame
+if all_data:
+    data = pd.concat(all_data, ignore_index=True)
+else:
+    print("No data files were loaded successfully.")
+    exit()
+
+# Check for required columns
+required_columns = {'DATE', 'TEMP', 'MAX', 'MIN'}
+if not required_columns.issubset(data.columns):
+    print("Required columns are missing in the data.")
+    exit()
+
+# Extract and process relevant columns
+temperature_data = data[['DATE', 'TEMP', 'MAX', 'MIN']].copy()
+temperature_data['DATE'] = pd.to_datetime(temperature_data['DATE'], errors='coerce')
+temperature_data.dropna(subset=['DATE'], inplace=True)  # Drop rows with invalid dates
+
+# Convert temperatures to Celsius
+temperature_data['TEMP'] = (temperature_data['TEMP'] - 32) * 5 / 9
+temperature_data['MAX'] = (temperature_data['MAX'] - 32) * 5 / 9
+temperature_data['MIN'] = (temperature_data['MIN'] - 32) * 5 / 9
+
+# Plot 1: Temperature
+plt.figure(figsize=(10, 5))
+plt.plot(temperature_data['DATE'], temperature_data['TEMP'], label='Temperature (°C)', color='red')
+plt.title('MANILA Temperature 1990-2020')
+plt.xlabel('Date')
+plt.ylabel('Temperature (°C)')
+plt.legend()
+plt.grid()
+plt.savefig('temperature_plot_celsius.png')
+plt.show()
+
+# Plot 2: Maximum Temperature
+plt.figure(figsize=(10, 5))
+plt.plot(temperature_data['DATE'], temperature_data['MAX'], label='Max Temperature (°C)', color='red')
+plt.title('Maximum Temperature 1990 -2020')
+plt.xlabel('Date')
+plt.ylabel('Max Temperature (°C)')
+plt.legend()
+plt.grid()
+plt.savefig('max_temperature_plot_celsius.png')
+plt.show()
+
+# Plot 3: Minimum Temperature
+plt.figure(figsize=(10, 5))
+plt.plot(temperature_data['DATE'], temperature_data['MIN'], label='Min Temperature (°C)', color='red')
+plt.title('Minimum Temperature 1990-2020')
+plt.xlabel('Date')
+plt.ylabel('Min Temperature (°C)')
+plt.legend()
+plt.grid()
+plt.savefig('min_temperature_plot_celsius.png')
+plt.show()
+
+reference_period = temperature_data[
+    (temperature_data['DATE'] >= '1990-01-01') &
+    (temperature_data['DATE'] <= '2020-12-31')
+]
+mean_temp = reference_period['TEMP'].mean()
+
+# Calculate temperature anomalies
+temperature_data['TEMP_ANOMALY'] = temperature_data['TEMP'] - mean_temp
+
+# Plot 4: Temperature Anomalies
+plt.figure(figsize=(10, 5))
+plt.plot(temperature_data['DATE'], temperature_data['TEMP_ANOMALY'], label='Temperature Anomaly (°C)', color='blue')
+plt.axhline(0, color='black', linestyle='--', linewidth=1, label='Baseline (1990-2020 Mean)')
+plt.title('Temperature Anomalies (1990-2020)')
+plt.xlabel('Date')
+plt.ylabel('Temperature Anomaly (°C)')
+plt.legend()
+plt.grid()
+plt.savefig('temperature_anomalies_plot_celsius.png')
+plt.show()
+
+temperature_data['MONTH'] = temperature_data['DATE'].dt.month
+
+# Calculate average temperature for each month across all years
+monthly_avg_temp = temperature_data.groupby('MONTH')['TEMP'].mean()
+
+# Create a list of month names for labeling
+month_names = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+]
+
+# Plot the average temperature for each month
+plt.figure(figsize=(10, 5))
+plt.plot(month_names, monthly_avg_temp, marker='o', color='red', label='Average Temperature (°C)')
+plt.title('Average Monthly Temperature (1990-2020)')
+plt.xlabel('Month')
+plt.ylabel('Temperature (°C)')
+plt.grid(axis='y', linestyle='--', linewidth=0.5)
+plt.xticks(rotation=45)
+plt.legend()
+plt.tight_layout()  # Adjust layout to prevent clipping of labels
+plt.savefig('average_monthly_temperature_overall_celsius.png')
+plt.show()
